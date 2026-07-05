@@ -649,26 +649,20 @@ export class CosmogenesisApp {
         </p>
       </section>
 
-      <section class="about-section about-grid">
-        <div>
-          <h2>The First System</h2>
-          <p>
-            Buckminster Fuller placed the tetrahedron at the foundation of his energetic geometry.
-            In <em>Synergetics</em>, he treated the triangle as the basic unit of structure and
-            the tetrahedron as the basic unit of energetic system: four centers, six relationships,
-            one enclosed volume.
-          </p>
-          <p>
-            A single tetrahedral system introduces polarity. It points. It implies direction. To
-            balance that polarity, a complementary tetrahedron can interpenetrate it, forming the
-            star tetrahedron or merkaba. Opposed tetrahedral orientations create a fuller energetic
-            symmetry.
-          </p>
-        </div>
-        <aside class="about-callout">
-          <span>Core Pattern</span>
-          <strong>sphere -> circle -> triangle -> tetrahedron -> star tetrahedron</strong>
-        </aside>
+      <section class="about-section">
+        <h2>The First System</h2>
+        <p>
+          Buckminster Fuller placed the tetrahedron at the foundation of his energetic geometry.
+          In <em>Synergetics</em>, he treated the triangle as the basic unit of structure and
+          the tetrahedron as the basic unit of energetic system: four centers, six relationships,
+          one enclosed volume.
+        </p>
+        <p>
+          A single tetrahedral system introduces polarity. It points. It implies direction. To
+          balance that polarity, a complementary tetrahedron can interpenetrate it, forming the
+          star tetrahedron or merkaba. Opposed tetrahedral orientations create a fuller energetic
+          symmetry.
+        </p>
       </section>
 
       <section class="about-section">
