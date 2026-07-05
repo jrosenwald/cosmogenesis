@@ -199,14 +199,16 @@ const isPlanarFlower3dStepSupported = (step: FlowerStepId): boolean =>
   !unsupportedPlanarFlower3dSteps.has(step);
 
 const standard3dViewDefaults = {
+  lineOpacity: 0.45,
   sphereScale: 1,
   sphereOpacity: 0.13,
-  sphereGridOpacity: 0.24,
+  sphereGridOpacity: 0.05,
 };
 const aether3dViewDefaults = {
-  sphereScale: 1.45,
-  sphereOpacity: 0.11,
-  sphereGridOpacity: 0.21,
+  lineOpacity: 0.45,
+  sphereScale: 1.21,
+  sphereOpacity: 0.04,
+  sphereGridOpacity: 0.06,
 };
 
 const matrixDisplayOptions: { key: MatrixDisplayOption; label: string }[] = [
@@ -267,6 +269,7 @@ export class CosmogenesisApp {
   private connectCenters = true;
   private slideshowPlaying = false;
   private aboutOpen = false;
+  private infoPanelCollapsed = false;
   private readonly slideshowIntervalMs = 3000;
   private lastSlideTime = 0;
   private metrics: CanvasMetrics = { width: 1, height: 1, dpr: 1 };
@@ -531,6 +534,13 @@ export class CosmogenesisApp {
 
     this.infoPanel = document.createElement("aside");
     this.infoPanel.className = "info-panel";
+    this.infoPanel.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest(".info-collapse-button")) {
+        this.infoPanelCollapsed = !this.infoPanelCollapsed;
+        this.updateUI();
+      }
+    });
 
     this.aboutPanel = this.createAboutPanel();
 
@@ -928,6 +938,7 @@ export class CosmogenesisApp {
     this.rotateButton.setAttribute("aria-pressed", this.options.autoRotate3d ? "true" : "false");
     this.connectButton.classList.toggle("is-active", this.connectCenters);
     this.connectButton.setAttribute("aria-pressed", this.connectCenters ? "true" : "false");
+    this.infoPanel.classList.toggle("is-collapsed", this.infoPanelCollapsed);
     this.sphereSizeControl.classList.toggle("is-visible", this.activeMode === "3d");
     this.controlsPanel
       .querySelectorAll<HTMLElement>(".sphere-opacity-control")
@@ -999,7 +1010,18 @@ export class CosmogenesisApp {
             flowerStep?.note ?? symbol?.note ?? "",
           ];
 
+    if (this.infoPanelCollapsed) {
+      this.infoPanel.innerHTML = `
+        <button class="info-collapse-button info-restore-button" type="button" aria-expanded="false">
+          <span>Show description</span>
+          <strong>${title}</strong>
+        </button>
+      `;
+      return;
+    }
+
     this.infoPanel.innerHTML = `
+      <button class="info-collapse-button" type="button" aria-expanded="true">Hide</button>
       <div class="info-kicker">${this.activeMode === "3d" ? "3D Construction" : "2D Construction"}</div>
       <h1>${title}</h1>
       ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
@@ -1298,6 +1320,7 @@ export class CosmogenesisApp {
 
   private apply3dViewDefaults(symbolId: string): void {
     const defaults = symbolId === "aether-3d" ? aether3dViewDefaults : standard3dViewDefaults;
+    this.options.lineOpacity = defaults.lineOpacity;
     this.options.sphereScale = defaults.sphereScale;
     this.options.sphereOpacity = defaults.sphereOpacity;
     this.options.sphereGridOpacity = defaults.sphereGridOpacity;
