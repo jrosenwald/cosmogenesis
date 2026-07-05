@@ -142,7 +142,7 @@ Implementation notes:
 - The Aether has its own render path using instanced sphere fields, optional instanced center nodes, local neighbor line segments, and light scene fog for depth.
 - Vector Equilibrium has a contextual Jitterbug control. It uses a special render path that moves the 12 cuboctahedron/vector-equilibrium vertices along a helical inward path toward six paired octahedral positions, while preserving the moving centerpoint edge skeleton. Its info panel includes a Buckminster Fuller / Synergetics explanation and explicitly frames Fuller's gravity/field ideas as his geometric worldview rather than standard physics.
 
-The accidental sphere line artifact was addressed by rendering clean translucent sphere meshes and only drawing center lines when `Connect centerpoints` is enabled. The current 3D sphere material does not intentionally add meridian or pole-to-pole linework.
+The accidental sphere line artifact was addressed by rendering clean translucent sphere meshes and only drawing center lines when `Show geometry` is enabled. The current 3D sphere material does not intentionally add meridian or pole-to-pole linework.
 
 3D interactions:
 

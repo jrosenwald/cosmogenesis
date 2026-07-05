@@ -61,13 +61,13 @@ const symbols3d: WorkbenchSymbol[] = [
     id: "tetra-spheres",
     label: "Tetrahedral Spheres",
     description: "Four equal spheres whose centers form a regular tetrahedron.",
-    note: "Connect centerpoints to reveal the six tetrahedron edges.",
+    note: "Use Show geometry to reveal the six tetrahedron edges.",
   },
   {
     id: "star-tetra-3d",
     label: "Star Tetrahedron",
     description: "Eight tetrahedral modules around an octahedral core, shown with circumscribing spheres.",
-    note: "Connect centerpoints to show the two interpenetrating tetrahedral edge sets.",
+    note: "Use Show geometry to show the two interpenetrating tetrahedral edge sets.",
   },
   {
     id: "vector-equilibrium-3d",
@@ -91,7 +91,7 @@ const symbols3d: WorkbenchSymbol[] = [
     id: "aether-3d",
     label: "The Aether",
     description: "An immersive 16 x 16 x 16 field of 4096 spheres extending the side-oriented 64-grid reading.",
-    note: "Drag rotates the field, Shift-drag pans, scroll moves through depth, and Connect centerpoints reveals local neighbor links.",
+    note: "Drag rotates the field, Shift-drag pans, scroll moves through depth, and Show geometry reveals local neighbor links.",
   },
 ];
 
@@ -232,6 +232,7 @@ export class CosmogenesisApp {
   private readonly infoPanel: HTMLElement;
   private readonly controlsPanel: HTMLElement;
   private readonly reorientButton: HTMLButtonElement;
+  private readonly rotateButton: HTMLButtonElement;
   private readonly connectButton: HTMLButtonElement;
   private readonly sphereSizeControl: HTMLElement;
   private readonly sphereSizeInput: HTMLInputElement;
@@ -348,10 +349,20 @@ export class CosmogenesisApp {
     this.reorientButton.textContent = "Re-orient";
     this.reorientButton.addEventListener("click", () => this.resetView());
 
+    this.rotateButton = document.createElement("button");
+    this.rotateButton.type = "button";
+    this.rotateButton.className = "panel-action-button rotate-toggle";
+    this.rotateButton.textContent = "Rotate";
+    this.rotateButton.setAttribute("aria-pressed", "false");
+    this.rotateButton.addEventListener("click", () => {
+      this.options.autoRotate3d = !this.options.autoRotate3d;
+      this.updateUI();
+    });
+
     this.connectButton = document.createElement("button");
     this.connectButton.type = "button";
     this.connectButton.className = "panel-action-button connect-center-button connect-toggle";
-    this.connectButton.textContent = "Connect centerpoints";
+    this.connectButton.textContent = "Show geometry";
     this.connectButton.setAttribute("aria-pressed", "true");
     this.connectButton.addEventListener("click", () => {
       this.connectCenters = !this.connectCenters;
@@ -437,6 +448,7 @@ export class CosmogenesisApp {
 
     this.controlsPanel.append(
       this.reorientButton,
+      this.rotateButton,
       this.connectButton,
       lineOpacityControl,
       this.sphereSizeControl,
@@ -854,6 +866,7 @@ export class CosmogenesisApp {
   private tick(time: number): void {
     this.updateSlideshow(time);
     this.updateJitterbug(time);
+    this.updateAutoRotation();
     this.metrics = resizeCanvasToDisplaySize(this.canvas);
     applyScreenSpace(this.ctx, this.metrics);
     clearCanvas(this.ctx, this.metrics.width, this.metrics.height);
@@ -910,6 +923,9 @@ export class CosmogenesisApp {
     this.slideshowControls.classList.toggle("is-visible", this.activeMode === "3d");
     this.playPauseButton.textContent = this.slideshowPlaying ? "Pause" : "Play";
     this.playPauseButton.classList.toggle("is-active", this.slideshowPlaying);
+    this.rotateButton.classList.toggle("is-visible", this.activeMode === "3d");
+    this.rotateButton.classList.toggle("is-active", this.options.autoRotate3d);
+    this.rotateButton.setAttribute("aria-pressed", this.options.autoRotate3d ? "true" : "false");
     this.connectButton.classList.toggle("is-active", this.connectCenters);
     this.connectButton.setAttribute("aria-pressed", this.connectCenters ? "true" : "false");
     this.sphereSizeControl.classList.toggle("is-visible", this.activeMode === "3d");
@@ -987,7 +1003,7 @@ export class CosmogenesisApp {
       <div class="info-kicker">${this.activeMode === "3d" ? "3D Construction" : "2D Construction"}</div>
       <h1>${title}</h1>
       ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
-      <div class="mode-readout">${this.connectCenters ? "Centerpoints connected" : "Centerpoints hidden"}</div>
+      <div class="mode-readout">${this.connectCenters ? "Geometry visible" : "Geometry hidden"}</div>
     `;
   }
 
@@ -1219,6 +1235,7 @@ export class CosmogenesisApp {
       const dy = event.clientY - this.lastPointer.y;
 
       if (this.activeMode === "3d") {
+        this.options.autoRotate3d = false;
         if (this.active3dId === "aether-3d" && event.shiftKey) {
           this.threeView.panX = Math.max(-760, Math.min(760, this.threeView.panX - dx * 2.2));
           this.threeView.panY = Math.max(-760, Math.min(760, this.threeView.panY + dy * 2.2));
@@ -1392,6 +1409,13 @@ export class CosmogenesisApp {
     this.jitterbugSlider.value = String(this.jitterbugProgress);
     this.jitterbugReadout.textContent = `${Math.round(this.jitterbugProgress * 100)}%`;
     this.updateInfoPanel();
+  }
+
+  private updateAutoRotation(): void {
+    if (this.activeMode !== "3d" || !this.options.autoRotate3d || this.aboutOpen) {
+      return;
+    }
+    this.threeView.yaw += 0.0032;
   }
 }
 

@@ -968,6 +968,14 @@ button:active {
     0 14px 58px rgba(0, 0, 0, 0.34);
 }
 
+.rotate-toggle {
+  display: none;
+}
+
+.rotate-toggle.is-visible {
+  display: block;
+}
+
 .sphere-size-control {
   display: none;
   grid-template-columns: 1fr auto;

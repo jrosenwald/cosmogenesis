@@ -65,7 +65,7 @@ export class Controls {
       this.createToggle("Labels", "showLabels"),
       this.createToggle("Circles", "showConstructionCircles"),
       this.createToggle("Points", "showLatticePoints"),
-      this.createToggle("Connect centers", "connectCenters"),
+      this.createToggle("Show geometry", "connectCenters"),
       this.createToggle("Animation", "animation"),
       this.createToggle("Auto rotate", "autoRotate3d"),
     );
