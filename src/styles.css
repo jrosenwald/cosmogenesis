@@ -210,6 +210,55 @@ button:active {
   text-transform: uppercase;
 }
 
+.about-nav {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(132, 166, 201, 0.18);
+}
+
+.about-button {
+  width: 100%;
+  min-height: 68px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  padding: 12px 14px;
+  border-radius: 7px;
+  border-color: rgba(244, 204, 112, 0.5);
+  background:
+    linear-gradient(135deg, rgba(244, 204, 112, 0.2), rgba(112, 225, 255, 0.13)),
+    rgba(8, 18, 31, 0.92);
+  color: #fff6df;
+  text-align: left;
+  box-shadow:
+    inset 3px 0 0 rgba(244, 204, 112, 0.88),
+    0 0 28px rgba(244, 204, 112, 0.1);
+}
+
+.about-button span {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.about-button strong {
+  color: rgba(112, 225, 255, 0.86);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.about-button.is-active {
+  border-color: rgba(112, 225, 255, 0.82);
+  background:
+    linear-gradient(135deg, rgba(112, 225, 255, 0.24), rgba(244, 204, 112, 0.19)),
+    rgba(14, 27, 40, 0.96);
+  box-shadow:
+    inset 3px 0 0 rgba(112, 225, 255, 0.94),
+    0 0 32px rgba(112, 225, 255, 0.18);
+}
+
 .control-panel {
   padding: 14px 14px 12px;
   border-bottom: 1px solid rgba(132, 166, 201, 0.14);
@@ -364,6 +413,216 @@ button:active {
   border-color: rgba(112, 225, 255, 0.22);
 }
 
+.about-panel {
+  position: absolute;
+  z-index: 6;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  left: 384px;
+  display: none;
+  overflow: hidden;
+  border: 1px solid rgba(112, 225, 255, 0.25);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(112, 225, 255, 0.13), transparent 33%),
+    radial-gradient(circle at 88% 8%, rgba(244, 204, 112, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(6, 14, 25, 0.96), rgba(2, 6, 13, 0.94));
+  box-shadow:
+    0 28px 120px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(18px);
+}
+
+.about-panel.is-visible {
+  display: block;
+}
+
+.about-close {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  right: 16px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border-color: rgba(244, 204, 112, 0.44);
+  background: rgba(4, 10, 18, 0.76);
+  color: rgba(255, 245, 218, 0.92);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.about-article {
+  height: 100%;
+  overflow: auto;
+  padding: 56px clamp(24px, 5vw, 76px) 64px;
+  color: rgba(238, 247, 255, 0.86);
+  scrollbar-color: rgba(112, 225, 255, 0.42) rgba(8, 18, 31, 0.28);
+}
+
+.about-hero {
+  max-width: 900px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid rgba(132, 166, 201, 0.2);
+}
+
+.about-kicker,
+.about-sources span {
+  color: rgba(244, 204, 112, 0.82);
+  font-size: 12px;
+  font-weight: 840;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.about-hero h1 {
+  max-width: 840px;
+  margin: 8px 0 14px;
+  color: #fff8e8;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 6vw, 78px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: 0;
+  text-shadow: 0 0 34px rgba(244, 204, 112, 0.16);
+}
+
+.about-hero p {
+  max-width: 780px;
+  margin: 0;
+  color: rgba(226, 237, 247, 0.78);
+  font-size: clamp(17px, 2.1vw, 22px);
+  line-height: 1.45;
+}
+
+.about-section {
+  max-width: 900px;
+  margin-top: 34px;
+}
+
+.about-section h2 {
+  margin: 0 0 12px;
+  color: #ffe4a8;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(27px, 3.4vw, 42px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.about-section p {
+  margin: 0;
+  color: rgba(238, 247, 255, 0.84);
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.about-section p + p {
+  margin-top: 15px;
+}
+
+.about-lede p {
+  color: rgba(238, 247, 255, 0.9);
+  font-size: 18px;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 280px);
+  gap: 22px;
+  align-items: start;
+}
+
+.about-callout {
+  padding: 18px;
+  border: 1px solid rgba(244, 204, 112, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(244, 204, 112, 0.12), rgba(112, 225, 255, 0.06)),
+    rgba(4, 11, 20, 0.7);
+}
+
+.about-callout span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(112, 225, 255, 0.8);
+  font-size: 11px;
+  font-weight: 840;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.about-callout strong {
+  color: #fff2ca;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.about-emphasis {
+  max-width: 980px;
+  padding: 26px;
+  border: 1px solid rgba(112, 225, 255, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(112, 225, 255, 0.12), rgba(244, 204, 112, 0.08)),
+    rgba(3, 9, 17, 0.62);
+}
+
+.about-closing {
+  max-width: 980px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(244, 204, 112, 0.28);
+}
+
+.about-closing p:last-child {
+  color: #fff2ca;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(21px, 2.4vw, 31px);
+  line-height: 1.32;
+}
+
+.about-sources {
+  max-width: 900px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 42px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(132, 166, 201, 0.2);
+}
+
+.about-sources span {
+  flex: 0 0 100%;
+}
+
+.about-sources a {
+  padding: 7px 10px;
+  border: 1px solid rgba(132, 166, 201, 0.22);
+  border-radius: 999px;
+  background: rgba(6, 14, 24, 0.68);
+  color: rgba(226, 237, 247, 0.84);
+  font-size: 12px;
+  font-weight: 720;
+  text-decoration: none;
+}
+
+.about-sources a:hover {
+  border-color: rgba(112, 225, 255, 0.58);
+  color: #f8fcff;
+}
+
+.cosmogenesis.is-about-open .info-panel,
+.cosmogenesis.is-about-open .floating-controls-panel,
+.cosmogenesis.is-about-open .flower-stepper,
+.cosmogenesis.is-about-open .matrix-display-controls,
+.cosmogenesis.is-about-open .jitterbug-controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .info-kicker {
   color: rgba(112, 225, 255, 0.88);
   font-size: 11px;
@@ -485,6 +744,15 @@ button:active {
     width: min(320px, calc(100vw - 36px));
   }
 
+  .about-panel {
+    left: 356px;
+  }
+
+  .about-article {
+    padding-right: 34px;
+    padding-left: 34px;
+  }
+
   .info-panel {
     left: 356px;
     right: 296px;
@@ -514,6 +782,30 @@ button:active {
   .timeline-item {
     min-height: 44px;
     font-size: 11px;
+  }
+
+  .about-panel {
+    top: calc(34vh + 36px);
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+  }
+
+  .about-close {
+    top: 10px;
+    right: 10px;
+  }
+
+  .about-article {
+    padding: 48px 18px 38px;
+  }
+
+  .about-hero h1 {
+    font-size: 38px;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
   }
 }
 

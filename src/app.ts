@@ -248,6 +248,9 @@ export class CosmogenesisApp {
   private readonly jitterbugPlayButton: HTMLButtonElement;
   private readonly jitterbugSlider: HTMLInputElement;
   private readonly jitterbugReadout: HTMLElement;
+  private aboutButton!: HTMLButtonElement;
+  private aboutPanel!: HTMLElement;
+  private aboutCloseButton!: HTMLButtonElement;
   private readonly modeButtons = new Map<AppMode, HTMLButtonElement>();
   private readonly symbolButtons = new Map<string, HTMLButtonElement>();
   private readonly stepButtons = new Map<FlowerStepId, HTMLButtonElement>();
@@ -262,6 +265,7 @@ export class CosmogenesisApp {
   private lastJitterbugTime = 0;
   private connectCenters = true;
   private slideshowPlaying = false;
+  private aboutOpen = false;
   private readonly slideshowIntervalMs = 3000;
   private lastSlideTime = 0;
   private metrics: CanvasMetrics = { width: 1, height: 1, dpr: 1 };
@@ -516,6 +520,8 @@ export class CosmogenesisApp {
     this.infoPanel = document.createElement("aside");
     this.infoPanel.className = "info-panel";
 
+    this.aboutPanel = this.createAboutPanel();
+
     this.root.append(
       this.webglCanvas,
       this.canvas,
@@ -525,6 +531,7 @@ export class CosmogenesisApp {
       this.matrixControls,
       this.jitterbugControls,
       this.infoPanel,
+      this.aboutPanel,
     );
 
     this.bindCanvasEvents();
@@ -541,6 +548,18 @@ export class CosmogenesisApp {
     const brand = document.createElement("header");
     brand.className = "brand";
     brand.innerHTML = "<span>Cosmogenesis</span><strong>Geometry Atlas</strong>";
+
+    const aboutNav = document.createElement("div");
+    aboutNav.className = "about-nav";
+    this.aboutButton = document.createElement("button");
+    this.aboutButton.type = "button";
+    this.aboutButton.className = "about-button";
+    this.aboutButton.innerHTML = "<span>What is this?</span><strong>A geometric universe</strong>";
+    this.aboutButton.addEventListener("click", () => {
+      this.aboutOpen = !this.aboutOpen;
+      this.updateUI();
+    });
+    aboutNav.append(this.aboutButton);
 
     const modeTabs = document.createElement("div");
     modeTabs.className = "mode-tabs";
@@ -565,8 +584,228 @@ export class CosmogenesisApp {
       modeTabs.append(button);
     }
 
-    sidebar.append(brand, modeTabs);
+    sidebar.append(brand, aboutNav, modeTabs);
     return sidebar;
+  }
+
+  private createAboutPanel(): HTMLElement {
+    const panel = document.createElement("section");
+    panel.className = "about-panel";
+    panel.setAttribute("aria-label", "What is Cosmogenesis?");
+    panel.setAttribute("aria-hidden", "true");
+
+    this.aboutCloseButton = document.createElement("button");
+    this.aboutCloseButton.type = "button";
+    this.aboutCloseButton.className = "about-close";
+    this.aboutCloseButton.textContent = "Close";
+    this.aboutCloseButton.addEventListener("click", () => {
+      this.aboutOpen = false;
+      this.updateUI();
+    });
+
+    const article = document.createElement("article");
+    article.className = "about-article";
+    article.innerHTML = `
+      <header class="about-hero">
+        <div class="about-kicker">Cosmogenesis</div>
+        <h1>A harmonic geometry of space</h1>
+        <p>
+          Cosmogenesis is an atlas for seeing geometry as living pattern: energetic centers,
+          harmonic ratios, toroidal flow, stillness, contraction, expansion, and recursion.
+        </p>
+      </header>
+
+      <section class="about-section about-lede">
+        <p>
+          Most geometry is taught as if it were made of static objects: triangles, cubes,
+          tetrahedra, spheres, solids. Nature suggests something more fluid. What appears as
+          structure is pattern: energetic events, resonant relationships, fields, boundaries,
+          flows, ratios, and phase.
+        </p>
+        <p>
+          In this view, geometry is not a collection of physical things. Geometry is information.
+          It describes how events relate: distance, angle, proportion, symmetry, tension,
+          compression, and balance. A triangle is not primarily a flat object with three sides.
+          It is the relationship between three centers. A tetrahedron is not simply a solid.
+          It is the simplest stable three-dimensional relationship among four energetic events.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>Events, Centers, and Relationship</h2>
+        <p>
+          Imagine each point in a geometric pattern not as a dot, but as an event: a localized
+          center of motion within a field. Each event has radiative and compressive aspects,
+          something like a toroidal flow with both outward and inward dynamics. When multiple
+          events interact, their centerpoints establish stable relationships. Lines are not
+          physical rods connecting them; they are informational vectors describing distance,
+          force, and orientation.
+        </p>
+        <p>
+          Three such events form the basis of the triangle. Four form the tetrahedron. These are
+          not arbitrary forms. The triangle is the first stable two-dimensional enclosure. The
+          tetrahedron is the first stable three-dimensional system. Both arise naturally from the
+          attempt of energetic centers to balance spacing, tension, compression, and containment.
+        </p>
+      </section>
+
+      <section class="about-section about-grid">
+        <div>
+          <h2>The First System</h2>
+          <p>
+            Buckminster Fuller placed the tetrahedron at the foundation of his energetic geometry.
+            In <em>Synergetics</em>, he treated the triangle as the basic unit of structure and
+            the tetrahedron as the basic unit of energetic system: four centers, six relationships,
+            one enclosed volume.
+          </p>
+          <p>
+            A single tetrahedral system introduces polarity. It points. It implies direction. To
+            balance that polarity, a complementary tetrahedron can interpenetrate it, forming the
+            star tetrahedron or merkaba. Opposed tetrahedral orientations create a fuller energetic
+            symmetry.
+          </p>
+        </div>
+        <aside class="about-callout">
+          <span>Core Pattern</span>
+          <strong>sphere -> circle -> triangle -> tetrahedron -> star tetrahedron</strong>
+        </aside>
+      </section>
+
+      <section class="about-section">
+        <h2>The Isotropic Vector Matrix</h2>
+        <p>
+          Fuller's isotropic vector matrix, or IVM, gives this recursive geometry a spatial
+          foundation. It can be imagined as a tetrahedral-octahedral lattice extending in all
+          directions, generated by closest-packed spheres. Every sphere center becomes a node.
+          Every node relates to others through equal vectors.
+        </p>
+        <p>
+          This inverts the ordinary picture. Instead of asking how matter moves through empty
+          space, we can ask how localized events arise within an already structured field. Apparent
+          emptiness becomes a state of balance, not absence. It is full, but balanced; active, but
+          at rest.
+        </p>
+      </section>
+
+      <section class="about-section about-emphasis">
+        <h2>Vector Equilibrium: The Geometry of Stillness</h2>
+        <p>
+          The cuboctahedron, which Fuller called the Vector Equilibrium, is unique because every
+          vector is equal. The distance from the center to each outer vertex equals the distance
+          between adjacent outer vertices. Radial vectors and edge vectors balance perfectly.
+        </p>
+        <p>
+          For Fuller, this made the Vector Equilibrium the zero phase of energetic geometry: pure
+          potential before asymmetry, motion, or manifestation. It is not nothingness. It is
+          equilibrium. Stillness is not dead absence. Stillness is perfect balance.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>The Jitterbug: Geometry Breathing</h2>
+        <p>
+          The Vector Equilibrium does not remain static. It has an internal transformation Fuller
+          called the jitterbug. Through this motion, the VE contracts and expands, passing through
+          other primary geometries as its vertices rotate, collapse, and reconfigure.
+        </p>
+        <p>
+          This is the crucial step from sacred geometry as picture to sacred geometry as process.
+          The VE can collapse toward octahedral and tetrahedral states, unfold again, and imply
+          other symmetries through phase transitions. In this motion, geometry begins to breathe:
+          contraction, expansion, torque, spin, and return.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>Geometrodynamics</h2>
+        <p>
+          John Wheeler's geometrodynamics gives this intuition a parallel language. Wheeler explored
+          the possibility that matter, charge, and gravitational phenomena could be understood as
+          expressions of spacetime geometry itself. What we call matter may arise from geometric
+          structure and curvature rather than from separate substance inserted into space.
+        </p>
+        <p>
+          Fuller approached this through design, tensegrity, triangulation, and energetic structure.
+          Wheeler approached it through relativity, spacetime, and quantum gravity. Both lines point
+          toward a dynamic picture: reality is not made of things sitting inside geometry. Reality is
+          geometry in motion.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>Fractal Space and the 64 Tetrahedron Matrix</h2>
+        <p>
+          Nassim Haramein's fractal space model extends this geometric intuition across scale.
+          Rather than treating the Planck scale, atomic scale, biological scale, planetary scale,
+          and cosmic scale as disconnected domains, the fractal model imagines space as recursively
+          structured. The same organizing principles repeat: toroidal flow, spherical boundary,
+          tetrahedral relationship, vector equilibrium, contraction, expansion.
+        </p>
+        <p>
+          The 64 tetrahedron matrix becomes a symbolic and geometric bridge: a finite window into an
+          infinite recursive lattice. In two-dimensional projection, this same matrix resonates with
+          the Flower of Life pattern: circles as event boundaries, intersections as relational nodes,
+          and repeating centers as the footprint of a deeper spatial grammar.
+        </p>
+      </section>
+
+      <section class="about-section about-grid">
+        <div>
+          <h2>Scale, Frequency, and Pumping</h2>
+          <p>
+            If the jitterbug is a pumping motion, then scale changes frequency. Smaller systems
+            complete the motion over shorter distances. Larger systems move through broader cycles.
+            This offers a way to imagine the universe as nested pumping rates: quantum events,
+            atoms, planets, solar systems, galaxies, and superclusters, each with boundary, spin,
+            exchange, and rhythm.
+          </p>
+        </div>
+        <aside class="about-callout">
+          <span>Nested Flow</span>
+          <strong>toroidal systems within toroidal systems</strong>
+        </aside>
+      </section>
+
+      <section class="about-section">
+        <h2>Harmonic Ratios as Grammar</h2>
+        <p>
+          This geometric universe is built from simple ratios. Equal vectors create the Vector
+          Equilibrium. Doubling creates octaves. Tetrahedral nesting creates recursive scale.
+          Icosahedral and dodecahedral phases introduce phi relationships. Circle packing produces
+          triangular and hexagonal order. The jitterbug links one symmetry state to another.
+        </p>
+        <p>
+          Harmony here is not decoration. It is the rule set. Ratios determine possible
+          relationships. Relationships determine geometry. Geometry determines flow. Flow determines
+          the appearance of structure.
+        </p>
+      </section>
+
+      <section class="about-section about-closing">
+        <h2>A Living Geometry</h2>
+        <p>
+          Cosmogenesis begins with the sphere as boundary, the circle as event horizon, the triangle
+          as first stable relationship, and the tetrahedron as first energetic system. It unfolds
+          into the star tetrahedron, the isotropic vector matrix, the Vector Equilibrium, the
+          jitterbug, the 64 tetrahedron field, and the fractal space metric.
+        </p>
+        <p>
+          Stillness is not emptiness. Stillness is perfect balance. Motion is imbalance seeking
+          balance. Geometry is the memory of that relationship.
+        </p>
+      </section>
+
+      <footer class="about-sources">
+        <span>Source threads</span>
+        <a href="https://i.imgur.com/TaOhPfi.png" target="_blank" rel="noreferrer">Reference image</a>
+        <a href="https://old.reddit.com/r/holofractal/comments/6g2fp4/buckminster_fuller_laid_the_ground_work_for_the/" target="_blank" rel="noreferrer">Fuller and synergetics</a>
+        <a href="https://old.reddit.com/r/holofractal/comments/zuda3q/this_beautiful_depiction_of_the_selfaware/" target="_blank" rel="noreferrer">Self-aware geometry</a>
+        <a href="https://old.reddit.com/r/holofractal/comments/1gk70w7/a_cursory_geometric_understanding_of_reality/" target="_blank" rel="noreferrer">Geometric reality</a>
+      </footer>
+    `;
+
+    panel.append(this.aboutCloseButton, article);
+    return panel;
   }
 
   private createColorControl(
@@ -656,6 +895,12 @@ export class CosmogenesisApp {
   }
 
   private updateUI(): void {
+    this.root.classList.toggle("is-about-open", this.aboutOpen);
+    this.aboutButton.classList.toggle("is-active", this.aboutOpen);
+    this.aboutButton.setAttribute("aria-expanded", this.aboutOpen ? "true" : "false");
+    this.aboutPanel.classList.toggle("is-visible", this.aboutOpen);
+    this.aboutPanel.setAttribute("aria-hidden", this.aboutOpen ? "false" : "true");
+
     this.modeButtons.forEach((button, mode) => {
       button.classList.toggle("is-active", mode === this.activeMode);
     });
@@ -1011,6 +1256,11 @@ export class CosmogenesisApp {
 
   private bindKeyboardEvents(): void {
     window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.aboutOpen) {
+        this.aboutOpen = false;
+        this.updateUI();
+        return;
+      }
       if (event.key.toLowerCase() === "r") {
         this.resetView();
       }
