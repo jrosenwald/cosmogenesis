@@ -261,7 +261,7 @@ export class CosmogenesisApp {
   private jitterbugDirection = 1;
   private lastJitterbugTime = 0;
   private connectCenters = true;
-  private slideshowPlaying = true;
+  private slideshowPlaying = false;
   private readonly slideshowIntervalMs = 3000;
   private lastSlideTime = 0;
   private metrics: CanvasMetrics = { width: 1, height: 1, dpr: 1 };
@@ -321,7 +321,7 @@ export class CosmogenesisApp {
     this.slideshowControls.setAttribute("aria-label", "3D timeline controls");
 
     this.previousSlideButton = this.createSlideshowButton("Back", () => this.goToPrevious3dSymbol());
-    this.playPauseButton = this.createSlideshowButton("Pause", () => {
+    this.playPauseButton = this.createSlideshowButton("Play", () => {
       this.slideshowPlaying = !this.slideshowPlaying;
       this.lastSlideTime = performance.now();
       this.updateUI();
