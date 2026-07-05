@@ -251,6 +251,13 @@ export class CosmogenesisApp {
   private readonly jitterbugPlayButton: HTMLButtonElement;
   private readonly jitterbugSlider: HTMLInputElement;
   private readonly jitterbugReadout: HTMLElement;
+  private readonly mobileDock: HTMLElement;
+  private readonly mobileSymbolsButton: HTMLButtonElement;
+  private readonly mobileModeButton: HTMLButtonElement;
+  private readonly mobilePlayButton: HTMLButtonElement;
+  private readonly mobileRotateButton: HTMLButtonElement;
+  private readonly mobileGeometryButton: HTMLButtonElement;
+  private readonly mobileControlsButton: HTMLButtonElement;
   private aboutButton!: HTMLButtonElement;
   private aboutPanel!: HTMLElement;
   private aboutCloseButton!: HTMLButtonElement;
@@ -269,7 +276,10 @@ export class CosmogenesisApp {
   private connectCenters = true;
   private slideshowPlaying = false;
   private aboutOpen = false;
-  private infoPanelCollapsed = false;
+  private infoPanelCollapsed =
+    typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+  private mobileSymbolsOpen = false;
+  private mobileControlsOpen = false;
   private readonly slideshowIntervalMs = 3000;
   private lastSlideTime = 0;
   private metrics: CanvasMetrics = { width: 1, height: 1, dpr: 1 };
@@ -329,11 +339,7 @@ export class CosmogenesisApp {
     this.slideshowControls.setAttribute("aria-label", "3D timeline controls");
 
     this.previousSlideButton = this.createSlideshowButton("Back", () => this.goToPrevious3dSymbol());
-    this.playPauseButton = this.createSlideshowButton("Play", () => {
-      this.slideshowPlaying = !this.slideshowPlaying;
-      this.lastSlideTime = performance.now();
-      this.updateUI();
-    });
+    this.playPauseButton = this.createSlideshowButton("Play", () => this.toggleSlideshow());
     this.nextSlideButton = this.createSlideshowButton("Forward", () => this.goToNext3dSymbol());
     this.slideshowControls.append(this.previousSlideButton, this.playPauseButton, this.nextSlideButton);
     this.sidebar.append(this.slideshowControls);
@@ -357,21 +363,14 @@ export class CosmogenesisApp {
     this.rotateButton.className = "panel-action-button rotate-toggle";
     this.rotateButton.textContent = "Rotate";
     this.rotateButton.setAttribute("aria-pressed", "false");
-    this.rotateButton.addEventListener("click", () => {
-      this.options.autoRotate3d = !this.options.autoRotate3d;
-      this.updateUI();
-    });
+    this.rotateButton.addEventListener("click", () => this.toggleRotation());
 
     this.connectButton = document.createElement("button");
     this.connectButton.type = "button";
     this.connectButton.className = "panel-action-button connect-center-button connect-toggle";
     this.connectButton.textContent = "Show geometry";
     this.connectButton.setAttribute("aria-pressed", "true");
-    this.connectButton.addEventListener("click", () => {
-      this.connectCenters = !this.connectCenters;
-      this.options.connectCenters = this.connectCenters;
-      this.updateUI();
-    });
+    this.connectButton.addEventListener("click", () => this.toggleGeometry());
 
     this.lineOpacityReadout = document.createElement("span");
     this.lineOpacityReadout.className = "sphere-size-readout";
@@ -543,6 +542,23 @@ export class CosmogenesisApp {
     });
 
     this.aboutPanel = this.createAboutPanel();
+    this.mobileDock = document.createElement("nav");
+    this.mobileDock.className = "mobile-dock";
+    this.mobileDock.setAttribute("aria-label", "Mobile controls");
+    this.mobileSymbolsButton = this.createMobileDockButton("Atlas", () => this.toggleMobileSymbols());
+    this.mobileModeButton = this.createMobileDockButton("3D", () => this.toggleMode());
+    this.mobilePlayButton = this.createMobileDockButton("Play", () => this.toggleSlideshow());
+    this.mobileRotateButton = this.createMobileDockButton("Rotate", () => this.toggleRotation());
+    this.mobileGeometryButton = this.createMobileDockButton("Geometry", () => this.toggleGeometry());
+    this.mobileControlsButton = this.createMobileDockButton("Tune", () => this.toggleMobileControls());
+    this.mobileDock.append(
+      this.mobileSymbolsButton,
+      this.mobileModeButton,
+      this.mobilePlayButton,
+      this.mobileRotateButton,
+      this.mobileGeometryButton,
+      this.mobileControlsButton,
+    );
 
     this.root.append(
       this.webglCanvas,
@@ -554,6 +570,7 @@ export class CosmogenesisApp {
       this.jitterbugControls,
       this.infoPanel,
       this.aboutPanel,
+      this.mobileDock,
     );
 
     this.bindCanvasEvents();
@@ -579,6 +596,10 @@ export class CosmogenesisApp {
     this.aboutButton.innerHTML = "<span>What is this?</span><strong>A geometric universe</strong>";
     this.aboutButton.addEventListener("click", () => {
       this.aboutOpen = !this.aboutOpen;
+      if (this.aboutOpen) {
+        this.mobileSymbolsOpen = false;
+        this.mobileControlsOpen = false;
+      }
       this.updateUI();
     });
     aboutNav.append(this.aboutButton);
@@ -589,19 +610,7 @@ export class CosmogenesisApp {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = mode.toUpperCase();
-      button.addEventListener("click", () => {
-        this.activeMode = mode;
-        this.options.geometryMode = mode === "3d" ? "spheres" : "circles";
-        if (
-          mode === "3d" &&
-          this.active3dId === "flower-3d" &&
-          !isPlanarFlower3dStepSupported(this.activeFlowerStep)
-        ) {
-          this.activeFlowerStep = "flower";
-        }
-        this.renderSymbolGrid();
-        this.updateUI();
-      });
+      button.addEventListener("click", () => this.setMode(mode));
       this.modeButtons.set(mode, button);
       modeTabs.append(button);
     }
@@ -866,6 +875,7 @@ export class CosmogenesisApp {
             this.activeFlowerStep = "flower";
           }
         }
+        this.mobileSymbolsOpen = false;
         this.updateUI();
       });
       this.symbolButtons.set(symbol.id, button);
@@ -913,10 +923,35 @@ export class CosmogenesisApp {
 
   private updateUI(): void {
     this.root.classList.toggle("is-about-open", this.aboutOpen);
+    this.root.classList.toggle("is-mobile-symbols-open", this.mobileSymbolsOpen);
+    this.root.classList.toggle("is-mobile-controls-open", this.mobileControlsOpen);
     this.aboutButton.classList.toggle("is-active", this.aboutOpen);
     this.aboutButton.setAttribute("aria-expanded", this.aboutOpen ? "true" : "false");
     this.aboutPanel.classList.toggle("is-visible", this.aboutOpen);
     this.aboutPanel.setAttribute("aria-hidden", this.aboutOpen ? "false" : "true");
+    this.mobileSymbolsButton.classList.toggle("is-active", this.mobileSymbolsOpen);
+    this.mobileSymbolsButton.setAttribute("aria-expanded", this.mobileSymbolsOpen ? "true" : "false");
+    const nextMode = this.activeMode === "3d" ? "2D" : "3D";
+    this.mobileModeButton.textContent = nextMode;
+    this.mobileModeButton.title = `Switch to ${nextMode}`;
+    this.mobileModeButton.setAttribute("aria-label", `Switch to ${nextMode}`);
+    this.mobilePlayButton.textContent = this.slideshowPlaying ? "Pause" : "Play";
+    this.mobilePlayButton.disabled = this.activeMode !== "3d";
+    this.mobilePlayButton.classList.toggle("is-active", this.slideshowPlaying);
+    this.mobileRotateButton.disabled = this.activeMode !== "3d";
+    this.mobileRotateButton.classList.toggle("is-active", this.options.autoRotate3d);
+    const hasGeometryOverlay = this.hasGeometryOverlay();
+    const geometryIsActive = hasGeometryOverlay && this.connectCenters;
+    const geometryActionLabel = geometryIsActive ? "Hide geometry" : "Show geometry";
+    const unavailableGeometryLabel = "This symbol has no centerpoint links to reveal.";
+    this.mobileGeometryButton.textContent = geometryIsActive ? "Hide" : "Show";
+    this.mobileGeometryButton.disabled = !hasGeometryOverlay;
+    this.mobileGeometryButton.title = hasGeometryOverlay ? geometryActionLabel : unavailableGeometryLabel;
+    this.mobileGeometryButton.setAttribute("aria-label", geometryActionLabel);
+    this.mobileGeometryButton.classList.toggle("is-active", geometryIsActive);
+    this.mobileGeometryButton.setAttribute("aria-pressed", geometryIsActive ? "true" : "false");
+    this.mobileControlsButton.classList.toggle("is-active", this.mobileControlsOpen);
+    this.mobileControlsButton.setAttribute("aria-expanded", this.mobileControlsOpen ? "true" : "false");
 
     this.modeButtons.forEach((button, mode) => {
       button.classList.toggle("is-active", mode === this.activeMode);
@@ -936,8 +971,11 @@ export class CosmogenesisApp {
     this.rotateButton.classList.toggle("is-visible", this.activeMode === "3d");
     this.rotateButton.classList.toggle("is-active", this.options.autoRotate3d);
     this.rotateButton.setAttribute("aria-pressed", this.options.autoRotate3d ? "true" : "false");
-    this.connectButton.classList.toggle("is-active", this.connectCenters);
-    this.connectButton.setAttribute("aria-pressed", this.connectCenters ? "true" : "false");
+    this.connectButton.textContent = geometryActionLabel;
+    this.connectButton.disabled = !hasGeometryOverlay;
+    this.connectButton.title = hasGeometryOverlay ? geometryActionLabel : unavailableGeometryLabel;
+    this.connectButton.classList.toggle("is-active", geometryIsActive);
+    this.connectButton.setAttribute("aria-pressed", geometryIsActive ? "true" : "false");
     this.infoPanel.classList.toggle("is-collapsed", this.infoPanelCollapsed);
     this.sphereSizeControl.classList.toggle("is-visible", this.activeMode === "3d");
     this.controlsPanel
@@ -1294,6 +1332,12 @@ export class CosmogenesisApp {
         this.updateUI();
         return;
       }
+      if (event.key === "Escape" && (this.mobileSymbolsOpen || this.mobileControlsOpen)) {
+        this.mobileSymbolsOpen = false;
+        this.mobileControlsOpen = false;
+        this.updateUI();
+        return;
+      }
       if (event.key.toLowerCase() === "r") {
         this.resetView();
       }
@@ -1316,6 +1360,89 @@ export class CosmogenesisApp {
     button.addEventListener("click", onClick);
 
     return button;
+  }
+
+  private createMobileDockButton(label: string, onClick: () => void): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+
+    return button;
+  }
+
+  private setMode(mode: AppMode): void {
+    this.activeMode = mode;
+    this.options.geometryMode = mode === "3d" ? "spheres" : "circles";
+    if (
+      mode === "3d" &&
+      this.active3dId === "flower-3d" &&
+      !isPlanarFlower3dStepSupported(this.activeFlowerStep)
+    ) {
+      this.activeFlowerStep = "flower";
+    }
+    if (mode === "2d") {
+      this.options.autoRotate3d = false;
+      this.slideshowPlaying = false;
+    }
+    this.renderSymbolGrid();
+    this.updateUI();
+  }
+
+  private toggleMode(): void {
+    this.setMode(this.activeMode === "3d" ? "2d" : "3d");
+  }
+
+  private toggleSlideshow(): void {
+    if (this.activeMode !== "3d") {
+      return;
+    }
+    this.slideshowPlaying = !this.slideshowPlaying;
+    this.lastSlideTime = performance.now();
+    this.updateUI();
+  }
+
+  private toggleRotation(): void {
+    if (this.activeMode !== "3d") {
+      return;
+    }
+    this.options.autoRotate3d = !this.options.autoRotate3d;
+    this.updateUI();
+  }
+
+  private toggleGeometry(): void {
+    if (!this.hasGeometryOverlay()) {
+      return;
+    }
+    this.connectCenters = !this.connectCenters;
+    this.options.connectCenters = this.connectCenters;
+    this.updateUI();
+  }
+
+  private hasGeometryOverlay(): boolean {
+    if (this.activeMode === "3d") {
+      return this.active3dId !== "sphere";
+    }
+
+    return this.active2dId !== "circle";
+  }
+
+  private toggleMobileSymbols(): void {
+    this.mobileSymbolsOpen = !this.mobileSymbolsOpen;
+    if (this.mobileSymbolsOpen) {
+      this.mobileControlsOpen = false;
+      this.aboutOpen = false;
+    }
+    this.updateUI();
+  }
+
+  private toggleMobileControls(): void {
+    this.mobileControlsOpen = !this.mobileControlsOpen;
+    if (this.mobileControlsOpen) {
+      this.mobileSymbolsOpen = false;
+      this.aboutOpen = false;
+    }
+    this.updateUI();
   }
 
   private apply3dViewDefaults(symbolId: string): void {
