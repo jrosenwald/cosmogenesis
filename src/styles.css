@@ -1599,6 +1599,58 @@ button:active {
   }
 }
 
+.mobile-shape-menu.is-highlighted,
+.mobile-dock.is-highlighted,
+.about-button.is-highlighted,
+.mobile-about-button.is-highlighted,
+.mobile-controls-button.is-highlighted,
+.flower-stepper.is-highlighted,
+.jitterbug-controls.is-highlighted {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-color: rgba(244, 204, 112, 0.9);
+  animation: attentionPulse 1.45s ease-in-out infinite;
+}
+
+.mobile-shape-menu.is-highlighted::after,
+.mobile-dock.is-highlighted::after,
+.about-button.is-highlighted::after,
+.mobile-about-button.is-highlighted::after,
+.mobile-controls-button.is-highlighted::after,
+.flower-stepper.is-highlighted::after,
+.jitterbug-controls.is-highlighted::after {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(255, 246, 204, 0.03) 34%,
+      rgba(255, 246, 204, 0.48) 50%,
+      rgba(255, 246, 204, 0.03) 66%,
+      transparent 100%
+    );
+  background-size: 260% 100%;
+  mix-blend-mode: screen;
+  animation: sheenSweep 1.35s ease-in-out infinite;
+}
+
+.mobile-shape-menu.is-highlighted > *,
+.mobile-dock.is-highlighted > *,
+.about-button.is-highlighted > *,
+.mobile-about-button.is-highlighted > *,
+.mobile-controls-button.is-highlighted > *,
+.flower-stepper.is-highlighted > *,
+.jitterbug-controls.is-highlighted > * {
+  position: relative;
+  z-index: 1;
+}
+
 @media (max-width: 760px) {
   .mobile-shape-menu {
     position: absolute;

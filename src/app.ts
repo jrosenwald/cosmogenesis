@@ -993,6 +993,12 @@ export class CosmogenesisApp {
     this.mobileAboutButton.classList.toggle("is-active", this.aboutOpen);
     this.mobileAboutButton.setAttribute("aria-expanded", this.aboutOpen ? "true" : "false");
     this.mobileShapeMenu.classList.toggle("is-open", this.mobileShapeMenuOpen);
+    const showFlowerStepper =
+      (this.activeMode === "2d" && this.active2dId === "flower-of-life") ||
+      (this.activeMode === "3d" && this.active3dId === "flower-3d");
+    const showJitterbugControls =
+      this.activeMode === "3d" && this.active3dId === "vector-equilibrium-3d";
+    const showDockAttention = this.mobileAttentionTarget === "dock";
     this.mobileShapeMenu.classList.toggle("is-highlighted", this.mobileAttentionTarget === "shape");
     this.mobileShapeToggle.textContent =
       this.activeMode === "3d"
@@ -1020,8 +1026,8 @@ export class CosmogenesisApp {
     this.mobileGeometryButton.setAttribute("aria-pressed", geometryIsActive ? "true" : "false");
     this.mobileControlsButton.classList.toggle("is-active", this.mobileControlsOpen);
     this.mobileControlsButton.setAttribute("aria-expanded", this.mobileControlsOpen ? "true" : "false");
-    this.mobileDock.classList.toggle("is-highlighted", this.mobileAttentionTarget === "dock");
-    this.mobileControlsButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "dock");
+    this.mobileDock.classList.toggle("is-highlighted", showDockAttention);
+    this.mobileControlsButton.classList.toggle("is-highlighted", showDockAttention);
     this.aboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
     this.mobileAboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
 
@@ -1073,9 +1079,6 @@ export class CosmogenesisApp {
     this.lineOpacityReadout.textContent = `${Math.round(this.options.lineOpacity * 100)}%`;
     this.sphereFieldOpacityReadout.textContent = `${Math.round(this.options.sphereOpacity * 100)}%`;
     this.sphereGridOpacityReadout.textContent = `${Math.round(this.options.sphereGridOpacity * 100)}%`;
-    const showFlowerStepper =
-      (this.activeMode === "2d" && this.active2dId === "flower-of-life") ||
-      (this.activeMode === "3d" && this.active3dId === "flower-3d");
     if (
       this.activeMode === "3d" &&
       this.active3dId === "flower-3d" &&
@@ -1084,6 +1087,7 @@ export class CosmogenesisApp {
       this.activeFlowerStep = "flower";
     }
     this.flowerStepper.classList.toggle("is-visible", showFlowerStepper);
+    this.flowerStepper.classList.toggle("is-highlighted", showDockAttention && showFlowerStepper);
     this.stepButtons.forEach((button, id) => {
       const disabled =
         this.activeMode === "3d" &&
@@ -1103,9 +1107,8 @@ export class CosmogenesisApp {
       button.classList.toggle("is-active", this.options[key]);
       button.setAttribute("aria-pressed", this.options[key] ? "true" : "false");
     });
-    const showJitterbugControls =
-      this.activeMode === "3d" && this.active3dId === "vector-equilibrium-3d";
     this.jitterbugControls.classList.toggle("is-visible", showJitterbugControls);
+    this.jitterbugControls.classList.toggle("is-highlighted", showDockAttention && showJitterbugControls);
     this.jitterbugPlayButton.classList.toggle("is-active", this.jitterbugPlaying);
     this.jitterbugPlayButton.textContent = this.jitterbugPlaying ? "Pause" : "Jitterbug";
     this.jitterbugSlider.value = String(this.jitterbugProgress);
@@ -1602,7 +1605,7 @@ export class CosmogenesisApp {
       this.setMobileAttention("dock", 6000);
     }
     if (id !== "flower-of-life") {
-      this.setMobileAttention("about", 2400);
+      this.setMobileAttention(null);
     }
     this.lastSlideTime = performance.now();
     this.mobileShapeMenuOpen = false;
@@ -1671,7 +1674,7 @@ export class CosmogenesisApp {
     } else if (id === "vector-equilibrium-3d") {
       this.setMobileAttention("dock", 6000);
     } else {
-      this.setMobileAttention("about", 2400);
+      this.setMobileAttention(null);
     }
     if (pauseSlideshow) {
       this.slideshowPlaying = false;
