@@ -589,7 +589,7 @@ export class CosmogenesisApp {
       }
       this.updateUI();
     });
-    this.mobileAboutButton.className = "mobile-about-button";
+    this.mobileAboutButton.className = "mobile-dock-button mobile-about-button";
     this.mobileAboutButton.title = "What is this?";
     this.mobileAboutButton.setAttribute("aria-label", "What is this?");
     this.mobileModeButton = this.createMobileDockButton("3D", () => this.toggleMode());
@@ -597,6 +597,7 @@ export class CosmogenesisApp {
     this.mobileRotateButton = this.createMobileDockButton("Rotate", () => this.toggleRotation());
     this.mobileGeometryButton = this.createMobileDockButton("Geometry", () => this.toggleGeometry());
     this.mobileControlsButton = this.createMobileDockButton("Tune", () => this.toggleMobileControls());
+    this.mobileControlsButton.classList.add("mobile-controls-button");
     this.mobileDock.append(
       this.mobileAboutButton,
       this.mobileModeButton,
@@ -625,7 +626,7 @@ export class CosmogenesisApp {
     this.renderSymbolGrid();
     this.renderMobileShapeGrid();
     this.updateUI();
-    this.setMobileAttention("about", 3500);
+    this.setMobileAttention("about", 5000);
     requestAnimationFrame((time) => this.tick(time));
   }
 
@@ -1020,6 +1021,7 @@ export class CosmogenesisApp {
     this.mobileControlsButton.classList.toggle("is-active", this.mobileControlsOpen);
     this.mobileControlsButton.setAttribute("aria-expanded", this.mobileControlsOpen ? "true" : "false");
     this.mobileDock.classList.toggle("is-highlighted", this.mobileAttentionTarget === "dock");
+    this.mobileControlsButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "dock");
     this.aboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
     this.mobileAboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
 
@@ -1513,6 +1515,7 @@ export class CosmogenesisApp {
   private createMobileDockButton(label: string, onClick: () => void): HTMLButtonElement {
     const button = document.createElement("button");
     button.type = "button";
+    button.className = "mobile-dock-button";
     button.textContent = label;
     button.addEventListener("click", onClick);
 
@@ -1596,10 +1599,10 @@ export class CosmogenesisApp {
     this.active2dId = id;
     if (id === "flower-of-life") {
       this.activeFlowerStep = "flower";
-      this.setMobileAttention("dock", 3200);
+      this.setMobileAttention("dock", 6000);
     }
     if (id !== "flower-of-life") {
-      this.setMobileAttention("about", 1800);
+      this.setMobileAttention("about", 2400);
     }
     this.lastSlideTime = performance.now();
     this.mobileShapeMenuOpen = false;
@@ -1664,11 +1667,11 @@ export class CosmogenesisApp {
       this.activeFlowerStep = "flower";
     }
     if (id === "flower-3d") {
-      this.setMobileAttention("dock", 3200);
+      this.setMobileAttention("dock", 6000);
     } else if (id === "vector-equilibrium-3d") {
-      this.setMobileAttention("dock", 3200);
+      this.setMobileAttention("dock", 6000);
     } else {
-      this.setMobileAttention("about", 1800);
+      this.setMobileAttention("about", 2400);
     }
     if (pauseSlideshow) {
       this.slideshowPlaying = false;
