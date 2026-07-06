@@ -251,8 +251,13 @@ export class CosmogenesisApp {
   private readonly jitterbugPlayButton: HTMLButtonElement;
   private readonly jitterbugSlider: HTMLInputElement;
   private readonly jitterbugReadout: HTMLElement;
+  private readonly mobileShapeMenu: HTMLElement;
+  private readonly mobileShapeToggle: HTMLButtonElement;
+  private readonly mobileShapeModeTabs: HTMLElement;
+  private readonly mobileShapeGrid: HTMLElement;
+  private readonly mobileShapeButtons = new Map<string, HTMLButtonElement>();
+  private readonly mobileAboutButton: HTMLButtonElement;
   private readonly mobileDock: HTMLElement;
-  private readonly mobileSymbolsButton: HTMLButtonElement;
   private readonly mobileModeButton: HTMLButtonElement;
   private readonly mobilePlayButton: HTMLButtonElement;
   private readonly mobileRotateButton: HTMLButtonElement;
@@ -278,8 +283,10 @@ export class CosmogenesisApp {
   private aboutOpen = false;
   private infoPanelCollapsed =
     typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
-  private mobileSymbolsOpen = false;
+  private mobileShapeMenuOpen = false;
   private mobileControlsOpen = false;
+  private mobileAttentionTarget: "about" | "dock" | "shape" | null = null;
+  private mobileAttentionTimer: number | null = null;
   private readonly slideshowIntervalMs = 3000;
   private lastSlideTime = 0;
   private metrics: CanvasMetrics = { width: 1, height: 1, dpr: 1 };
@@ -313,7 +320,13 @@ export class CosmogenesisApp {
     autoRotate3d: false,
   };
   private isDragging = false;
+  private activePointers = new Map<number, Point>();
+  private dragPointerId: number | null = null;
   private lastPointer: Point = { x: 0, y: 0 };
+  private pinchStartCamera: Camera | null = null;
+  private pinchStartDistance = 0;
+  private pinchStartCameraScale = 1;
+  private pinchStartZoom = 1;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -542,17 +555,50 @@ export class CosmogenesisApp {
     });
 
     this.aboutPanel = this.createAboutPanel();
+    this.mobileShapeMenu = document.createElement("section");
+    this.mobileShapeMenu.className = "mobile-shape-menu";
+    this.mobileShapeMenu.setAttribute("aria-label", "Shape selector");
+
+    this.mobileShapeToggle = document.createElement("button");
+    this.mobileShapeToggle.type = "button";
+    this.mobileShapeToggle.className = "mobile-shape-toggle";
+    this.mobileShapeToggle.addEventListener("click", () => this.toggleMobileShapeMenu());
+
+    this.mobileShapeModeTabs = document.createElement("div");
+    this.mobileShapeModeTabs.className = "mobile-shape-mode-tabs";
+    for (const mode of ["3d", "2d"] as AppMode[]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = mode.toUpperCase();
+      button.addEventListener("click", () => this.setMode(mode));
+      this.mobileShapeModeTabs.append(button);
+    }
+
+    this.mobileShapeGrid = document.createElement("div");
+    this.mobileShapeGrid.className = "mobile-shape-grid";
+    this.mobileShapeMenu.append(this.mobileShapeToggle, this.mobileShapeModeTabs, this.mobileShapeGrid);
+
     this.mobileDock = document.createElement("nav");
     this.mobileDock.className = "mobile-dock";
     this.mobileDock.setAttribute("aria-label", "Mobile controls");
-    this.mobileSymbolsButton = this.createMobileDockButton("Atlas", () => this.toggleMobileSymbols());
+    this.mobileAboutButton = this.createMobileDockButton("About", () => {
+      this.aboutOpen = !this.aboutOpen;
+      if (this.aboutOpen) {
+        this.mobileShapeMenuOpen = false;
+        this.mobileControlsOpen = false;
+      }
+      this.updateUI();
+    });
+    this.mobileAboutButton.className = "mobile-about-button";
+    this.mobileAboutButton.title = "What is this?";
+    this.mobileAboutButton.setAttribute("aria-label", "What is this?");
     this.mobileModeButton = this.createMobileDockButton("3D", () => this.toggleMode());
     this.mobilePlayButton = this.createMobileDockButton("Play", () => this.toggleSlideshow());
     this.mobileRotateButton = this.createMobileDockButton("Rotate", () => this.toggleRotation());
     this.mobileGeometryButton = this.createMobileDockButton("Geometry", () => this.toggleGeometry());
     this.mobileControlsButton = this.createMobileDockButton("Tune", () => this.toggleMobileControls());
     this.mobileDock.append(
-      this.mobileSymbolsButton,
+      this.mobileAboutButton,
       this.mobileModeButton,
       this.mobilePlayButton,
       this.mobileRotateButton,
@@ -570,13 +616,16 @@ export class CosmogenesisApp {
       this.jitterbugControls,
       this.infoPanel,
       this.aboutPanel,
+      this.mobileShapeMenu,
       this.mobileDock,
     );
 
     this.bindCanvasEvents();
     this.bindKeyboardEvents();
     this.renderSymbolGrid();
+    this.renderMobileShapeGrid();
     this.updateUI();
+    this.setMobileAttention("about", 3500);
     requestAnimationFrame((time) => this.tick(time));
   }
 
@@ -597,7 +646,7 @@ export class CosmogenesisApp {
     this.aboutButton.addEventListener("click", () => {
       this.aboutOpen = !this.aboutOpen;
       if (this.aboutOpen) {
-        this.mobileSymbolsOpen = false;
+        this.mobileShapeMenuOpen = false;
         this.mobileControlsOpen = false;
       }
       this.updateUI();
@@ -862,24 +911,35 @@ export class CosmogenesisApp {
     const symbols = this.activeMode === "3d" ? symbols3d : symbols2d;
 
     for (const symbol of symbols) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "mode-symbol";
-      button.textContent = symbol.label;
-      button.addEventListener("click", () => {
+      const button = this.createSymbolButton(symbol.id, symbol.label, "mode-symbol", () => {
         if (this.activeMode === "3d") {
           this.setActive3dSymbol(symbol.id, true);
         } else {
-          this.active2dId = symbol.id;
-          if (symbol.id === "flower-of-life") {
-            this.activeFlowerStep = "flower";
-          }
+          this.setActive2dSymbol(symbol.id);
         }
-        this.mobileSymbolsOpen = false;
-        this.updateUI();
       });
       this.symbolButtons.set(symbol.id, button);
       this.symbolGrid.append(button);
+    }
+  }
+
+  private renderMobileShapeGrid(): void {
+    this.mobileShapeGrid.replaceChildren();
+    this.mobileShapeButtons.clear();
+    const symbols = this.activeMode === "3d" ? symbols3d : symbols2d;
+
+    for (const symbol of symbols) {
+      const button = this.createSymbolButton(symbol.id, symbol.label, "mobile-shape-button", () => {
+        if (this.activeMode === "3d") {
+          this.setActive3dSymbol(symbol.id, true);
+        } else {
+          this.setActive2dSymbol(symbol.id);
+        }
+        this.mobileShapeMenuOpen = false;
+        this.updateUI();
+      });
+      this.mobileShapeButtons.set(symbol.id, button);
+      this.mobileShapeGrid.append(button);
     }
   }
 
@@ -923,14 +983,21 @@ export class CosmogenesisApp {
 
   private updateUI(): void {
     this.root.classList.toggle("is-about-open", this.aboutOpen);
-    this.root.classList.toggle("is-mobile-symbols-open", this.mobileSymbolsOpen);
+    this.root.classList.toggle("is-mobile-shape-open", this.mobileShapeMenuOpen);
     this.root.classList.toggle("is-mobile-controls-open", this.mobileControlsOpen);
     this.aboutButton.classList.toggle("is-active", this.aboutOpen);
     this.aboutButton.setAttribute("aria-expanded", this.aboutOpen ? "true" : "false");
     this.aboutPanel.classList.toggle("is-visible", this.aboutOpen);
     this.aboutPanel.setAttribute("aria-hidden", this.aboutOpen ? "false" : "true");
-    this.mobileSymbolsButton.classList.toggle("is-active", this.mobileSymbolsOpen);
-    this.mobileSymbolsButton.setAttribute("aria-expanded", this.mobileSymbolsOpen ? "true" : "false");
+    this.mobileAboutButton.classList.toggle("is-active", this.aboutOpen);
+    this.mobileAboutButton.setAttribute("aria-expanded", this.aboutOpen ? "true" : "false");
+    this.mobileShapeMenu.classList.toggle("is-open", this.mobileShapeMenuOpen);
+    this.mobileShapeMenu.classList.toggle("is-highlighted", this.mobileAttentionTarget === "shape");
+    this.mobileShapeToggle.textContent =
+      this.activeMode === "3d"
+        ? `Shape: ${symbols3d.find((symbol) => symbol.id === this.active3dId)?.label ?? ""}`
+        : `Shape: ${symbols2d.find((symbol) => symbol.id === this.active2dId)?.label ?? ""}`;
+    this.mobileShapeToggle.setAttribute("aria-expanded", this.mobileShapeMenuOpen ? "true" : "false");
     const nextMode = this.activeMode === "3d" ? "2D" : "3D";
     this.mobileModeButton.textContent = nextMode;
     this.mobileModeButton.title = `Switch to ${nextMode}`;
@@ -952,6 +1019,9 @@ export class CosmogenesisApp {
     this.mobileGeometryButton.setAttribute("aria-pressed", geometryIsActive ? "true" : "false");
     this.mobileControlsButton.classList.toggle("is-active", this.mobileControlsOpen);
     this.mobileControlsButton.setAttribute("aria-expanded", this.mobileControlsOpen ? "true" : "false");
+    this.mobileDock.classList.toggle("is-highlighted", this.mobileAttentionTarget === "dock");
+    this.aboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
+    this.mobileAboutButton.classList.toggle("is-highlighted", this.mobileAttentionTarget === "about");
 
     this.modeButtons.forEach((button, mode) => {
       button.classList.toggle("is-active", mode === this.activeMode);
@@ -968,6 +1038,18 @@ export class CosmogenesisApp {
     this.slideshowControls.classList.toggle("is-visible", this.activeMode === "3d");
     this.playPauseButton.textContent = this.slideshowPlaying ? "Pause" : "Play";
     this.playPauseButton.classList.toggle("is-active", this.slideshowPlaying);
+    this.mobileShapeModeTabs.querySelectorAll("button").forEach((button) => {
+      button.classList.toggle(
+        "is-active",
+        button.textContent === (this.activeMode === "3d" ? "3D" : "2D"),
+      );
+    });
+    this.mobileShapeButtons.forEach((button, id) => {
+      button.classList.toggle(
+        "is-active",
+        id === (this.activeMode === "3d" ? this.active3dId : this.active2dId),
+      );
+    });
     this.rotateButton.classList.toggle("is-visible", this.activeMode === "3d");
     this.rotateButton.classList.toggle("is-active", this.options.autoRotate3d);
     this.rotateButton.setAttribute("aria-pressed", this.options.autoRotate3d ? "true" : "false");
@@ -1282,13 +1364,56 @@ export class CosmogenesisApp {
     });
 
     this.canvas.addEventListener("pointerdown", (event) => {
-      this.isDragging = true;
-      this.lastPointer = { x: event.clientX, y: event.clientY };
-      this.canvas.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      try {
+        this.canvas.setPointerCapture(event.pointerId);
+      } catch {
+        // Some synthetic or platform touch sequences do not support capture immediately.
+      }
+      if (this.activePointers.size === 1) {
+        this.isDragging = true;
+        this.dragPointerId = event.pointerId;
+        this.lastPointer = { x: event.clientX, y: event.clientY };
+        this.pinchStartCamera = null;
+        return;
+      }
+      if (this.activePointers.size === 2) {
+        const [first, second] = [...this.activePointers.values()];
+        this.isDragging = false;
+        this.dragPointerId = null;
+        this.pinchStartDistance = Math.hypot(first.x - second.x, first.y - second.y);
+        this.pinchStartCameraScale = this.camera.scale;
+        this.pinchStartZoom = this.threeView.zoom;
+        this.pinchStartCamera = { ...this.camera };
+      }
     });
 
     this.canvas.addEventListener("pointermove", (event) => {
-      if (!this.isDragging) {
+      const currentPointer = { x: event.clientX, y: event.clientY };
+      if (!this.activePointers.has(event.pointerId)) {
+        return;
+      }
+      this.activePointers.set(event.pointerId, currentPointer);
+
+      if (this.activePointers.size >= 2 && this.pinchStartDistance > 0) {
+        const [first, second] = [...this.activePointers.values()];
+        const distance = Math.hypot(first.x - second.x, first.y - second.y);
+        const scale = distance / this.pinchStartDistance;
+        const midpoint = {
+          x: (first.x + second.x) / 2,
+          y: (first.y + second.y) / 2,
+        };
+
+        if (this.activeMode === "3d") {
+          this.threeView.zoom = Math.min(3.5, Math.max(0.45, this.pinchStartZoom * scale));
+        } else if (this.pinchStartCamera) {
+          this.camera = zoomCameraAtPoint(this.pinchStartCamera, this.metrics, midpoint, scale);
+        }
+        return;
+      }
+
+      if (!this.isDragging || this.dragPointerId !== event.pointerId) {
         return;
       }
       const dx = event.clientX - this.lastPointer.x;
@@ -1314,9 +1439,32 @@ export class CosmogenesisApp {
     });
 
     const stopDragging = (event: PointerEvent): void => {
-      this.isDragging = false;
-      if (this.canvas.hasPointerCapture(event.pointerId)) {
-        this.canvas.releasePointerCapture(event.pointerId);
+      this.activePointers.delete(event.pointerId);
+      try {
+        if (this.canvas.hasPointerCapture(event.pointerId)) {
+          this.canvas.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Ignore unsupported capture states during touch cancellation.
+      }
+      if (this.activePointers.size === 0) {
+        this.isDragging = false;
+        this.dragPointerId = null;
+        this.pinchStartCamera = null;
+        this.pinchStartDistance = 0;
+        return;
+      }
+
+      if (this.activePointers.size === 1) {
+        const [remainingPointerId, remainingPointer] = this.activePointers.entries().next().value as [
+          number,
+          Point,
+        ];
+        this.isDragging = true;
+        this.dragPointerId = remainingPointerId;
+        this.lastPointer = { ...remainingPointer };
+        this.pinchStartCamera = null;
+        this.pinchStartDistance = 0;
       }
     };
     this.canvas.addEventListener("pointerup", stopDragging);
@@ -1332,8 +1480,8 @@ export class CosmogenesisApp {
         this.updateUI();
         return;
       }
-      if (event.key === "Escape" && (this.mobileSymbolsOpen || this.mobileControlsOpen)) {
-        this.mobileSymbolsOpen = false;
+      if (event.key === "Escape" && (this.mobileShapeMenuOpen || this.mobileControlsOpen)) {
+        this.mobileShapeMenuOpen = false;
         this.mobileControlsOpen = false;
         this.updateUI();
         return;
@@ -1371,6 +1519,22 @@ export class CosmogenesisApp {
     return button;
   }
 
+  private createSymbolButton(
+    id: string,
+    label: string,
+    className: string,
+    onClick: () => void,
+  ): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.textContent = label;
+    button.dataset.symbolId = id;
+    button.addEventListener("click", onClick);
+
+    return button;
+  }
+
   private setMode(mode: AppMode): void {
     this.activeMode = mode;
     this.options.geometryMode = mode === "3d" ? "spheres" : "circles";
@@ -1386,6 +1550,7 @@ export class CosmogenesisApp {
       this.slideshowPlaying = false;
     }
     this.renderSymbolGrid();
+    this.renderMobileShapeGrid();
     this.updateUI();
   }
 
@@ -1427,19 +1592,50 @@ export class CosmogenesisApp {
     return this.active2dId !== "circle";
   }
 
-  private toggleMobileSymbols(): void {
-    this.mobileSymbolsOpen = !this.mobileSymbolsOpen;
-    if (this.mobileSymbolsOpen) {
+  private setActive2dSymbol(id: string): void {
+    this.active2dId = id;
+    if (id === "flower-of-life") {
+      this.activeFlowerStep = "flower";
+      this.setMobileAttention("dock", 3200);
+    }
+    if (id !== "flower-of-life") {
+      this.setMobileAttention("about", 1800);
+    }
+    this.lastSlideTime = performance.now();
+    this.mobileShapeMenuOpen = false;
+    this.updateUI();
+  }
+
+  private toggleMobileShapeMenu(): void {
+    this.mobileShapeMenuOpen = !this.mobileShapeMenuOpen;
+    if (this.mobileShapeMenuOpen) {
       this.mobileControlsOpen = false;
       this.aboutOpen = false;
     }
     this.updateUI();
   }
 
+  private setMobileAttention(target: "about" | "dock" | "shape" | null, durationMs = 0): void {
+    if (this.mobileAttentionTimer !== null) {
+      window.clearTimeout(this.mobileAttentionTimer);
+      this.mobileAttentionTimer = null;
+    }
+    this.mobileAttentionTarget = target;
+    this.updateUI();
+    if (target && durationMs > 0) {
+      this.mobileAttentionTimer = window.setTimeout(() => {
+        if (this.mobileAttentionTarget === target) {
+          this.mobileAttentionTarget = null;
+          this.updateUI();
+        }
+      }, durationMs);
+    }
+  }
+
   private toggleMobileControls(): void {
     this.mobileControlsOpen = !this.mobileControlsOpen;
     if (this.mobileControlsOpen) {
-      this.mobileSymbolsOpen = false;
+      this.mobileShapeMenuOpen = false;
       this.aboutOpen = false;
     }
     this.updateUI();
@@ -1467,10 +1663,18 @@ export class CosmogenesisApp {
     if (id === "flower-3d") {
       this.activeFlowerStep = "flower";
     }
+    if (id === "flower-3d") {
+      this.setMobileAttention("dock", 3200);
+    } else if (id === "vector-equilibrium-3d") {
+      this.setMobileAttention("dock", 3200);
+    } else {
+      this.setMobileAttention("about", 1800);
+    }
     if (pauseSlideshow) {
       this.slideshowPlaying = false;
     }
     this.lastSlideTime = performance.now();
+    this.mobileShapeMenuOpen = false;
     this.updateUI();
   }
 
