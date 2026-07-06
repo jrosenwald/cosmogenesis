@@ -24,12 +24,6 @@ type FlowerStepId =
   | "dodecahedron"
   | "icosahedron"
   | "star-tetrahedron";
-type MatrixDisplayOption =
-  | "showMatrixWireframe"
-  | "showMatrixFaces"
-  | "showMatrixNodes"
-  | "showMatrixSpheres"
-  | "showMatrixProjection";
 
 interface WorkbenchSymbol {
   id: string;
@@ -211,14 +205,6 @@ const aether3dViewDefaults = {
   sphereGridOpacity: 0.06,
 };
 
-const matrixDisplayOptions: { key: MatrixDisplayOption; label: string }[] = [
-  { key: "showMatrixWireframe", label: "Wireframe" },
-  { key: "showMatrixFaces", label: "Faces" },
-  { key: "showMatrixNodes", label: "Nodes" },
-  { key: "showMatrixSpheres", label: "Spheres" },
-  { key: "showMatrixProjection", label: "Projection" },
-];
-
 export class CosmogenesisApp {
   private readonly root: HTMLElement;
   private readonly webglCanvas: HTMLCanvasElement;
@@ -247,6 +233,7 @@ export class CosmogenesisApp {
   private readonly sphereGridOpacityReadout: HTMLElement;
   private readonly flowerStepper: HTMLElement;
   private readonly matrixControls: HTMLElement;
+  private readonly matrixProjectionButton: HTMLButtonElement;
   private readonly jitterbugControls: HTMLElement;
   private readonly jitterbugPlayButton: HTMLButtonElement;
   private readonly jitterbugSlider: HTMLInputElement;
@@ -269,9 +256,8 @@ export class CosmogenesisApp {
   private readonly modeButtons = new Map<AppMode, HTMLButtonElement>();
   private readonly symbolButtons = new Map<string, HTMLButtonElement>();
   private readonly stepButtons = new Map<FlowerStepId, HTMLButtonElement>();
-  private readonly matrixDisplayButtons = new Map<MatrixDisplayOption, HTMLButtonElement>();
   private activeMode: AppMode = "3d";
-  private active3dId = "sphere";
+  private active3dId = "flower-3d";
   private active2dId = "circle";
   private activeFlowerStep: FlowerStepId = "flower";
   private jitterbugProgress = 0;
@@ -311,7 +297,7 @@ export class CosmogenesisApp {
     showMatrixFaces: false,
     showMatrixNodes: true,
     showMatrixSpheres: true,
-    showMatrixProjection: false,
+    showMatrixProjection: true,
     showLabels: false,
     showConstructionCircles: false,
     showLatticePoints: false,
@@ -497,18 +483,15 @@ export class CosmogenesisApp {
 
     this.matrixControls = document.createElement("div");
     this.matrixControls.className = "matrix-display-controls";
-    this.matrixControls.setAttribute("aria-label", "64 Tetrahedron Grid display modes");
-    for (const option of matrixDisplayOptions) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = option.label;
-      button.addEventListener("click", () => {
-        this.options[option.key] = !this.options[option.key];
-        this.updateUI();
-      });
-      this.matrixDisplayButtons.set(option.key, button);
-      this.matrixControls.append(button);
-    }
+    this.matrixControls.setAttribute("aria-label", "64 Tetrahedron Grid projection controls");
+    this.matrixProjectionButton = document.createElement("button");
+    this.matrixProjectionButton.type = "button";
+    this.matrixProjectionButton.textContent = "Projection";
+    this.matrixProjectionButton.addEventListener("click", () => {
+      this.options.showMatrixProjection = !this.options.showMatrixProjection;
+      this.updateUI();
+    });
+    this.matrixControls.append(this.matrixProjectionButton);
 
     this.jitterbugControls = document.createElement("div");
     this.jitterbugControls.className = "jitterbug-controls";
@@ -621,12 +604,13 @@ export class CosmogenesisApp {
       this.mobileDock,
     );
 
+    this.root.addEventListener("click", (event) => this.closeAboutOnOutsideClick(event));
     this.bindCanvasEvents();
     this.bindKeyboardEvents();
     this.renderSymbolGrid();
     this.renderMobileShapeGrid();
     this.updateUI();
-    this.setMobileAttention("about", 5000);
+    this.setMobileAttention("about", 1500);
     requestAnimationFrame((time) => this.tick(time));
   }
 
@@ -906,6 +890,28 @@ export class CosmogenesisApp {
     return label;
   }
 
+  private closeAboutOnOutsideClick(event: MouseEvent): void {
+    if (!this.aboutOpen) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    if (
+      target.closest(".about-panel") ||
+      target.closest(".about-button") ||
+      target.closest(".mobile-about-button")
+    ) {
+      return;
+    }
+
+    this.aboutOpen = false;
+    this.updateUI();
+  }
+
   private renderSymbolGrid(): void {
     this.symbolGrid.replaceChildren();
     this.symbolButtons.clear();
@@ -1000,10 +1006,15 @@ export class CosmogenesisApp {
       this.activeMode === "3d" && this.active3dId === "vector-equilibrium-3d";
     const showDockAttention = this.mobileAttentionTarget === "dock";
     this.mobileShapeMenu.classList.toggle("is-highlighted", this.mobileAttentionTarget === "shape");
-    this.mobileShapeToggle.textContent =
+    const activeShapeLabel =
       this.activeMode === "3d"
-        ? `Shape: ${symbols3d.find((symbol) => symbol.id === this.active3dId)?.label ?? ""}`
-        : `Shape: ${symbols2d.find((symbol) => symbol.id === this.active2dId)?.label ?? ""}`;
+        ? symbols3d.find((symbol) => symbol.id === this.active3dId)?.label ?? ""
+        : symbols2d.find((symbol) => symbol.id === this.active2dId)?.label ?? "";
+    const shapeKicker = document.createElement("span");
+    shapeKicker.textContent = "Shape";
+    const shapeValue = document.createElement("strong");
+    shapeValue.textContent = activeShapeLabel;
+    this.mobileShapeToggle.replaceChildren(shapeKicker, shapeValue);
     this.mobileShapeToggle.setAttribute("aria-expanded", this.mobileShapeMenuOpen ? "true" : "false");
     const nextMode = this.activeMode === "3d" ? "2D" : "3D";
     this.mobileModeButton.textContent = nextMode;
@@ -1103,10 +1114,8 @@ export class CosmogenesisApp {
       "is-visible",
       this.activeMode === "3d" && this.active3dId === "tetra-matrix-64-3d",
     );
-    this.matrixDisplayButtons.forEach((button, key) => {
-      button.classList.toggle("is-active", this.options[key]);
-      button.setAttribute("aria-pressed", this.options[key] ? "true" : "false");
-    });
+    this.matrixProjectionButton.classList.toggle("is-active", this.options.showMatrixProjection);
+    this.matrixProjectionButton.setAttribute("aria-pressed", this.options.showMatrixProjection ? "true" : "false");
     this.jitterbugControls.classList.toggle("is-visible", showJitterbugControls);
     this.jitterbugControls.classList.toggle("is-highlighted", showDockAttention && showJitterbugControls);
     this.jitterbugPlayButton.classList.toggle("is-active", this.jitterbugPlaying);
@@ -1425,7 +1434,10 @@ export class CosmogenesisApp {
       const dy = event.clientY - this.lastPointer.y;
 
       if (this.activeMode === "3d") {
-        this.options.autoRotate3d = false;
+        if (this.options.autoRotate3d) {
+          this.options.autoRotate3d = false;
+          this.updateUI();
+        }
         if (this.active3dId === "aether-3d" && event.shiftKey) {
           this.threeView.panX = Math.max(-760, Math.min(760, this.threeView.panX - dx * 2.2));
           this.threeView.panY = Math.max(-760, Math.min(760, this.threeView.panY + dy * 2.2));
@@ -1602,7 +1614,7 @@ export class CosmogenesisApp {
     this.active2dId = id;
     if (id === "flower-of-life") {
       this.activeFlowerStep = "flower";
-      this.setMobileAttention("dock", 6000);
+      this.setMobileAttention("dock", 1500);
     }
     if (id !== "flower-of-life") {
       this.setMobileAttention(null);
@@ -1665,14 +1677,15 @@ export class CosmogenesisApp {
     }
     if (id === "tetra-matrix-64-3d") {
       this.options.showMatrixSpheres = true;
+      this.options.showMatrixProjection = true;
     }
     if (id === "flower-3d") {
       this.activeFlowerStep = "flower";
     }
     if (id === "flower-3d") {
-      this.setMobileAttention("dock", 6000);
+      this.setMobileAttention("dock", 1500);
     } else if (id === "vector-equilibrium-3d") {
-      this.setMobileAttention("dock", 6000);
+      this.setMobileAttention("dock", 1500);
     } else {
       this.setMobileAttention(null);
     }

@@ -434,7 +434,14 @@ export class ThreeScene {
     }
 
     if (state.options.showMatrixProjection) {
-      this.rootGroup.add(createMatrixProjectionOverlay(matrix, state.options.sphereColor, state.options.lineOpacity));
+      this.rootGroup.add(
+        createMatrixFlowerProjectionOverlay(
+          matrix,
+          state.options.sphereScale,
+          state.options.sphereColor,
+          state.options.lineOpacity,
+        ),
+      );
     }
 
     if (state.options.showMatrixSpheres) {
@@ -1136,33 +1143,50 @@ const getMatrixCircumspheres = (
     };
   });
 
-const createMatrixProjectionOverlay = (
+const createMatrixFlowerProjectionOverlay = (
   matrix: TetraMatrix,
+  sphereScale: number,
   color: string,
   lineOpacity: number,
-): THREE.LineSegments => {
+): THREE.Group => {
   const maxZ = matrix.vertices.reduce((max, vertex) => Math.max(max, Math.abs(vertex.z)), 1);
-  const points: THREE.Vector3[] = [];
-
-  for (const [from, to] of matrix.edges) {
-    const a = matrix.vertices[from];
-    const b = matrix.vertices[to];
-    points.push(
-      new THREE.Vector3(a.x, a.y, -maxZ * 1.08),
-      new THREE.Vector3(b.x, b.y, -maxZ * 1.08),
-    );
-  }
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const maxPlanarRadius = matrix.vertices.reduce(
+    (max, vertex) => Math.max(max, Math.hypot(vertex.x, vertex.y)),
+    1,
+  );
+  const projectionZ = -maxZ * 1.86;
+  const flowerRadius = (maxPlanarRadius / 3) * sphereScale;
+  const latticeRotation = Math.PI / 6;
+  const group = new THREE.Group();
   const material = new THREE.LineBasicMaterial({
     color,
     transparent: true,
-    opacity: 0.28 * lineOpacity,
+    opacity: 0.44 * lineOpacity,
     depthTest: false,
     depthWrite: false,
   });
 
-  return new THREE.LineSegments(geometry, material);
+  for (const center of generateHexLattice(flowerRadius, 2)) {
+    const projectedCenter = rotatePoint2(center, latticeRotation);
+    const points = createCirclePoints(flowerRadius, 160).map(
+      (point) => new THREE.Vector3(projectedCenter.x + point.x, projectedCenter.y + point.y, projectionZ),
+    );
+    const circle = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), material);
+    circle.renderOrder = 4;
+    group.add(circle);
+  }
+
+  return group;
+};
+
+const rotatePoint2 = (point: Point, angle: number): Point => {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  return {
+    x: point.x * cos - point.y * sin,
+    y: point.x * sin + point.y * cos,
+  };
 };
 
 const getOuterMatrixEdges = (matrix: TetraMatrix): [number, number][] => {
